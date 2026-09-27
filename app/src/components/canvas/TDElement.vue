@@ -11,7 +11,7 @@
         <img
           v-if="spritePath"
           ref="spriteImgRef"
-          :src="localPath || spritePath"
+          :src="currentImgSrc || spritePath"
           class="sprite-img-hidden"
           draggable="false"
           @dragstart.prevent
@@ -61,7 +61,7 @@
   <script setup>
   import { computed, ref, watch, nextTick } from 'vue'
   import { rgbaToCSS, numToHex6, hexToRGBA } from '../../utils/colors'
-  import { spriteImagePath, localSpriteImagePath } from '../../constants/sprites'
+  import { spriteImagePath, localSpriteImagePath, prinesideSpriteUrl } from '../../constants/sprites'
   import { FONTS } from '../../constants/fonts'
 
   const props = defineProps({
@@ -73,7 +73,8 @@
   const emit = defineEmits(['mousedown', 'resize-start', 'contextmenu'])
 
   const imgFailed = ref(false)
-  const localPath = ref(null)
+  const currentImgSrc = ref(null)
+  const fallbackIndex = ref(0)
   const spriteImgRef = ref(null)
   const canvasRef = ref(null)
 
@@ -85,26 +86,32 @@
     return spriteImagePath(lib, tex)
   })
 
-  const localSpritePath = computed(() => {
-    if (props.el.type !== 'sprite') return null
+  function getFallbackCandidates() {
+    if (props.el.type !== 'sprite' || !props.el.text?.includes(':')) return []
     const [lib, tex] = props.el.text.split(':')
-    if (!lib || !tex) return null
-    return localSpriteImagePath(lib, tex)
-  })
+    const primary = spriteImagePath(lib, tex)
+    const local = localSpriteImagePath(lib, tex)
+    const prineside = prinesideSpriteUrl(lib, tex)
+    const openMp = `https://assets.open.mp/assets/images/sprites/${lib}/${tex}.png`
+    return [...new Set([primary, local, prineside, openMp].filter(Boolean))]
+  }
 
   function onImgError() {
-    if (!localPath.value) {
-      localPath.value = localSpritePath.value
+    const candidates = getFallbackCandidates()
+    fallbackIndex.value++
+    if (fallbackIndex.value < candidates.length) {
+      currentImgSrc.value = candidates[fallbackIndex.value]
     } else {
       imgFailed.value = true
     }
   }
 
-  watch(spritePath, () => {
+  watch(spritePath, (newVal) => {
     imgFailed.value = false
-    localPath.value = null
+    fallbackIndex.value = 0
+    currentImgSrc.value = newVal
     nextTick(() => drawTinted())
-  })
+  }, { immediate: true })
 
   watch(() => props.el.color, () => drawTinted())
   watch(() => props.el.w, () => drawTinted())
@@ -148,35 +155,39 @@
       const cv = canvasRef.value
       if (!img || !cv || !img.complete || img.naturalWidth === 0) return
 
-      cv.width = img.naturalWidth
-      cv.height = img.naturalHeight
-      const ctx = cv.getContext('2d')
-      ctx.clearRect(0, 0, cv.width, cv.height)
+      try {
+        cv.width = img.naturalWidth
+        cv.height = img.naturalHeight
+        const ctx = cv.getContext('2d')
+        ctx.clearRect(0, 0, cv.width, cv.height)
 
-      const c = props.el.color >>> 0
-      const { r, g, b, a } = hexToRGBA(c)
+        const c = props.el.color >>> 0
+        const { r, g, b, a } = hexToRGBA(c)
 
-      if (a === 0) return
+        if (a === 0) return
 
-      ctx.globalAlpha = a / 255
+        ctx.globalAlpha = a / 255
 
-      if (r === 255 && g === 255 && b === 255) {
-        // white = no tint
-        ctx.drawImage(img, 0, 0)
-      } else {
-        // draw tint color first
-        ctx.fillStyle = `rgb(${r},${g},${b})`
-        ctx.fillRect(0, 0, cv.width, cv.height)
-        // multiply image on top — dark pixels stay dark, light pixels get tinted
-        ctx.globalCompositeOperation = 'multiply'
-        ctx.drawImage(img, 0, 0)
-        // restore alpha from original image
-        ctx.globalCompositeOperation = 'destination-in'
-        ctx.drawImage(img, 0, 0)
-        ctx.globalCompositeOperation = 'source-over'
+        if (r === 255 && g === 255 && b === 255) {
+          // white = no tint
+          ctx.drawImage(img, 0, 0)
+        } else {
+          // draw tint color first
+          ctx.fillStyle = `rgb(${r},${g},${b})`
+          ctx.fillRect(0, 0, cv.width, cv.height)
+          // multiply image on top — dark pixels stay dark, light pixels get tinted
+          ctx.globalCompositeOperation = 'multiply'
+          ctx.drawImage(img, 0, 0)
+          // restore alpha from original image
+          ctx.globalCompositeOperation = 'destination-in'
+          ctx.drawImage(img, 0, 0)
+          ctx.globalCompositeOperation = 'source-over'
+        }
+
+        ctx.globalAlpha = 1
+      } catch (err) {
+        console.warn('drawTinted error:', err)
       }
-
-      ctx.globalAlpha = 1
     })
   }
 

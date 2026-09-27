@@ -103,6 +103,7 @@ export const KNOWN_SPRITES = [
   ]),
 
   ...def('LD_BUM', [
+    'blkdot',
     'bum1',
     'bum2'
   ]),
@@ -544,22 +545,42 @@ export const KNOWN_SPRITES = [
   ])
 ]
 
+export function normalizeSpriteLib(lib) {
+  if (!lib) return ''
+  const u = lib.toUpperCase()
+  if (u.startsWith('LD_')) return u
+  return lib.toLowerCase()
+}
+
+export function prinesideSpriteUrl(lib, tex) {
+  const libL = (lib || '').toLowerCase()
+  const texL = (tex || '').toLowerCase()
+  const known = KNOWN_SPRITES.find(s => s.lib.toLowerCase() === libL && s.tex.toLowerCase() === texL)
+  if (known) {
+    return `https://files.prineside.com/gtasa_samp_game_texture//png/${known.lib}.${known.tex}.png`
+  }
+  const normLib = normalizeSpriteLib(lib)
+  return `https://files.prineside.com/gtasa_samp_game_texture//png/${normLib}.${tex}.png`
+}
+
 export function spriteImagePath(lib, tex) {
-  const libL = lib.toLowerCase()
-  const texL = tex.toLowerCase()
+  const libL = (lib || '').toLowerCase()
+  const texL = (tex || '').toLowerCase()
+  if ((libL === 'ld_spac' && texL === 'white') || (libL === 'ld_bum' && texL === 'blkdot')) {
+    const normLib = normalizeSpriteLib(lib)
+    return `/sprites/${normLib}/${texL}.png`
+  }
   const known = KNOWN_SPRITES.find(s => s.lib.toLowerCase() === libL && s.tex.toLowerCase() === texL)
   if (known) {
     return `https://assets.open.mp/assets/images/sprites/${known.lib}/${known.tex}.png`
   }
-  return `https://files.prineside.com/gtasa_samp_game_texture//png/${lib}.${tex}.png`
+  return prinesideSpriteUrl(lib, tex)
 }
 
 export function localSpriteImagePath(lib, tex) {
-  const libL = lib.toLowerCase()
-  const texL = tex.toLowerCase()
+  const libL = (lib || '').toLowerCase()
+  const texL = (tex || '').toLowerCase()
   const known = KNOWN_SPRITES.find(s => s.lib.toLowerCase() === libL && s.tex.toLowerCase() === texL)
-  if (known) {
-    return `sprites/${known.lib}/${known.tex}.png`
-  }
-  return `sprites/${lib}/${tex}.png`
+  const normLib = known ? known.lib : normalizeSpriteLib(lib)
+  return `/sprites/${normLib}/${texL}.png`
 }

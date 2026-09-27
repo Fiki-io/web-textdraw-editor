@@ -23,6 +23,7 @@
       @multi-select="emit('multi-select', $event)"
       @toggle-visible="emit('toggle-visible', $event)"
       @toggle-lock="emit('toggle-lock', $event)"
+      @delete="emit('delete-element', $event)"
       @contextmenu="emit('contextmenu', $event[0], $event[1])"
       @reorder="(a, b) => emit('reorder', a, b)"
     />
@@ -80,7 +81,7 @@ defineProps({
 
 const emit = defineEmits([
   'add-element', 'add-preset',
-  'select', 'multi-select', 'toggle-visible', 'toggle-lock', 'contextmenu',
+  'select', 'multi-select', 'toggle-visible', 'toggle-lock', 'delete-element', 'contextmenu',
   'insert-sprite', 'notify',
   'upload-bg', 'remove-bg', 'upload-refs',
   'select-ref', 'toggle-ref-visible', 'toggle-ref-lock', 'delete-ref',

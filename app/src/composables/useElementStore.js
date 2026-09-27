@@ -52,6 +52,16 @@ export function useElementStore() {
     selected.value = new Set()
   }
 
+  function deleteEl(id) {
+    if (!id) return
+    commit(els.value.filter(e => e.id !== id))
+    if (selected.value.has(id)) {
+      const nextSel = new Set(selected.value)
+      nextSel.delete(id)
+      selected.value = nextSel
+    }
+  }
+
   function duplicate()
   {
     if (!selected.value.size) return
@@ -130,7 +140,7 @@ export function useElementStore() {
 
   return {
     els, selected, sorted, selArr, selOne,
-    addEl, deleteSelected, duplicate, updEl, batchRename,
+    addEl, deleteSelected, deleteEl, duplicate, updEl, batchRename,
     selectAll, clearSelection, toggleSelect,
     undo, redo, canUndo, canRedo,
     bringToFront, sendToBack,

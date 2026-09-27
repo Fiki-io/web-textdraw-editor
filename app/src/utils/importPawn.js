@@ -10,11 +10,11 @@ const ALIGN_NAME_MAP = {
 }
 
 const KNOWN_SPRITE_LIBS = [
-  'ld_beat', 'ld_card', 'ld_cell', 'ld_cntr', 'ld_dead', 'ld_driv',
-  'ld_frst', 'ld_game', 'ld_gdge', 'ld_gun', 'ld_gunl', 'ld_hmnu',
+  'ld_beat', 'ld_bum', 'ld_card', 'ld_cell', 'ld_chat', 'ld_cntr', 'ld_dead', 'ld_driv',
+  'ld_dual', 'ld_frst', 'ld_game', 'ld_gdge', 'ld_grav', 'ld_gun', 'ld_gunl', 'ld_hmnu',
   'ld_hud', 'ld_icon', 'ld_lock', 'ld_madn', 'ld_map', 'ld_news',
   'ld_none', 'ld_otb', 'ld_plan', 'ld_poke', 'ld_pool', 'ld_race',
-  'ld_rast', 'ld_rdio', 'ld_rxlt', 'ld_safe', 'ld_shrp', 'ld_sign',
+  'ld_rast', 'ld_rdio', 'ld_roul', 'ld_ruft', 'ld_rxlt', 'ld_safe', 'ld_shot', 'ld_shrp', 'ld_sign',
   'ld_slot', 'ld_spac', 'ld_spas', 'ld_tatt', 'ld_txd',
   'hud', 'radar', 'sampcac', 'samp', 'timecyc',
 ]
@@ -56,9 +56,10 @@ function extractLastArgs(line, count) {
 }
 
 function isSpriteName(text) {
-  if (!text.includes(':')) return false
+  if (!text || !text.includes(':')) return false
   const [lib] = text.split(':')
-  return KNOWN_SPRITE_LIBS.includes(lib.toLowerCase())
+  const libL = lib.toLowerCase()
+  return libL.startsWith('ld_') || KNOWN_SPRITE_LIBS.includes(libL)
 }
 
 function detectType(el) {

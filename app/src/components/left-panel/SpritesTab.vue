@@ -37,7 +37,7 @@
           :src="s.path" 
           class="sprite-img" 
           draggable="false"
-          @error="e => { if (!e.target.dataset.triedLocal) { e.target.dataset.triedLocal = '1'; e.target.src = localSpriteImagePath(s.lib, s.tex) } else { e.target.style.display='none' } }"
+          @error="onSpriteImgError($event, s)"
         />
           <div v-else class="sprite-text txd-text">
             {{ s.lib }}<br />
@@ -60,8 +60,22 @@
 </template>
 
 <script setup>
-import { KNOWN_SPRITES, spriteImagePath, localSpriteImagePath } from '../../constants/sprites'
+import { KNOWN_SPRITES, spriteImagePath, localSpriteImagePath, prinesideSpriteUrl } from '../../constants/sprites'
 import { ref, computed, isRef, watch, onMounted, onUnmounted } from 'vue'
+
+function onSpriteImgError(e, s) {
+  const img = e.target
+  const step = parseInt(img.dataset.failStep || '0', 10)
+  if (step === 0) {
+    img.dataset.failStep = '1'
+    img.src = localSpriteImagePath(s.lib, s.tex)
+  } else if (step === 1) {
+    img.dataset.failStep = '2'
+    img.src = prinesideSpriteUrl(s.lib, s.tex)
+  } else {
+    img.style.display = 'none'
+  }
+}
 
 
 const props = defineProps({

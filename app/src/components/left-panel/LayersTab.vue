@@ -39,6 +39,11 @@
           <path d="M3 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" stroke-width="1.4" fill="none" opacity="0.3"/>
         </svg>
       </span>
+      <span
+        class="icon delete-icon"
+        title="Delete element"
+        @click.stop="emit('delete', el)"
+      >✕</span>
     </div>
   </div>
 </template>
@@ -51,7 +56,7 @@ const props = defineProps({
   selected: { type: Object, default: () => new Set() },
 })
 
-const emit = defineEmits(['select', 'multi-select', 'toggle-visible', 'toggle-lock', 'contextmenu', 'reorder'])
+const emit = defineEmits(['select', 'multi-select', 'toggle-visible', 'toggle-lock', 'delete', 'contextmenu', 'reorder'])
 
 const dragId    = ref(null)
 const dragOverId = ref(null)
@@ -157,4 +162,19 @@ function onDragLeave() {
 .lock-icon.active { color: var(--red); }
 .layer-row.selected .lock-icon { color: var(--text1); }
 .layer-row.selected .lock-icon.active { color: #ff6666; }
+.delete-icon {
+  color: var(--text2);
+  font-size: 10px;
+  padding: 0 2px;
+  transition: color 0.1s;
+}
+.delete-icon:hover {
+  color: #ff4d4d;
+}
+.layer-row.selected .delete-icon {
+  color: var(--text1);
+}
+.layer-row.selected .delete-icon:hover {
+  color: #ff6666;
+}
 </style>

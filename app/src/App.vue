@@ -4,7 +4,9 @@
     <!-- TOPBAR -->
     <div class="topbar">
       <div class="logo-block">
-        <img class="logo-badge" :src="saoLogo" alt="SAO Logo" @click="openGithub">
+        <a href="https://github.com/San-Andreas-Online" target="_blank" rel="noopener noreferrer" title="San Andreas Online" style="display:inline-flex;align-items:center;text-decoration:none;">
+          <img class="logo-badge" :src="saoLogo" alt="SAO Logo">
+        </a>
         <span class="logo-text"><em>TextDraw</em> Designer</span>
         <span class="samp-badge">640×480</span>
       </div>
@@ -104,6 +106,7 @@
         @multi-select="onLayerMultiSelect"
         @toggle-visible="el  => store.updEl(el.id, { visible: !el.visible })"
         @toggle-lock="el => store.updEl(el.id, { locked: !el.locked })"
+        @delete-element="el => store.deleteEl(el.id)"
         @contextmenu="onContextMenu"
         @insert-sprite="onInsertSprite"
         @notify="onNotify"
@@ -316,10 +319,6 @@ const warnings = computed(() => validation.warnings.value)
 const refs     = computed(() => refImages.refs.value)
 const selRef   = computed(() => refImages.selRef.value)
 const bgImage  = computed(() => bgImg.bgImage.value)
-
-function openGithub() {
-  window.open('https://github.com/San-Andreas-Online', '_blank')
-}
 
 function onNotify(msg, type = 'info') {
   const id = Math.random().toString(36).slice(2, 7)
