@@ -1,2 +1,2 @@
-export const CW = 592
-export const CH = 448
+export const CW = 640
+export const CH = 480

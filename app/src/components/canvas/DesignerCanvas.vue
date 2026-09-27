@@ -13,6 +13,12 @@
         <CanvasBackground :bgImage="bgImage" :opacity="bgOpacity" />
         <GridOverlay :visible="showGrid" :gridSize="gridSize" :zoom="zoom" />
         <SafeZoneOverlay :visible="showSafe" :zoom="zoom" />
+        <GtaHudOverlay
+          :visible="showGtaHud"
+          :zoom="zoom"
+          :opacity="hudOpacity"
+          :widescreen="widescreen"
+        />
 
         <!-- Reference images -->
         <div class="layer drop-layer" style="z-index: 3">
@@ -72,24 +78,27 @@ import { CW, CH } from '../../constants/canvas'
 import CanvasBackground from './CanvasBackground.vue'
 import GridOverlay from './GridOverlay.vue'
 import SafeZoneOverlay from './SafeZoneOverlay.vue'
+import GtaHudOverlay from './GtaHudOverlay.vue'
 import MarqueeSelect from './MarqueeSelect.vue'
 import TDElement from './TDElement.vue'
 import RefImage from './RefImage.vue'
 
 const props = defineProps({
-  sorted:    { type: Array,   default: () => [] },
-  selected:  { type: Object,  default: () => new Set() },
-  refs:      { type: Array,   default: () => [] },
-  selRef:    { type: String,  default: null },
-  marquee:   { type: Object,  default: null },
-  zoom:      { type: Number,  default: 1.3 },
-  showGrid:  { type: Boolean, default: true },
-  showSafe:  { type: Boolean, default: true },
-  gridSize:  { type: Number,  default: 5 },
-  bgImage:   { type: String,  default: null },
-  bgOpacity: { type: Number,  default: 100 },
+  sorted:     { type: Array,   default: () => [] },
+  selected:   { type: Object,  default: () => new Set() },
+  refs:       { type: Array,   default: () => [] },
+  selRef:     { type: String,  default: null },
+  marquee:    { type: Object,  default: null },
+  zoom:       { type: Number,  default: 1.2 },
+  showGrid:   { type: Boolean, default: true },
+  showSafe:   { type: Boolean, default: false },
+  showGtaHud: { type: Boolean, default: true },
+  hudOpacity: { type: Number,  default: 90 },
+  gridSize:   { type: Number,  default: 5 },
+  bgImage:    { type: String,  default: null },
+  bgOpacity:  { type: Number,  default: 100 },
   widescreen: { type: Boolean, default: false },
-  snapLines: { type: Array, default: () => [] },
+  snapLines:  { type: Array,   default: () => [] },
 })
 
 const emit = defineEmits([
@@ -104,11 +113,19 @@ const emit = defineEmits([
 
 const cvRef = ref(null)
 
-const canvasStyle = computed(() => ({
-  width:  CW * props.zoom + 'px',
-  height: CH * props.zoom + 'px',
-  ...(props.widescreen ? { transform: `scaleX(${16/9 / (4/3)})`, transformOrigin: 'top left' } : {})
-}))
+const canvasStyle = computed(() => {
+  const ws = props.widescreen
+  const scale = (16 / 9) / (4 / 3) // 1.333333
+  return {
+    width:  CW * props.zoom + 'px',
+    height: CH * props.zoom + 'px',
+    ...(ws ? {
+      transform: `scaleX(${scale})`,
+      transformOrigin: 'center center',
+      margin: `0 ${((scale - 1) * CW * props.zoom) / 2}px`,
+    } : {})
+  }
+})
 
 function canvasPos(e)
 {
@@ -143,16 +160,20 @@ defineExpose({ canvasPos })
   width: 100%;
   height: 100%;
   overflow: auto;
+  display: flex;
 }
 .canvas-padding {
-  padding: 24px;
+  padding: 20px;
+  margin: auto;
   display: inline-block;
+  box-sizing: border-box;
 }
 .canvas {
   position: relative;
   cursor: crosshair;
   box-shadow: 0 0 0 1px var(--border2), 0 8px 32px rgba(0,0,0,0.6);
   overflow: hidden;
+  background: #000000;
 }
 .layer {
   position: absolute;
@@ -161,7 +182,7 @@ defineExpose({ canvasPos })
 
 :global(.sel-outline-global) {
   position: absolute;
-  border: 50px dashed #0a246a;
+  border: 1px dashed #0a246a;
   box-sizing: border-box;
   pointer-events: none;
 }

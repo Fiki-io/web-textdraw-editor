@@ -5,27 +5,83 @@
     <div class="topbar">
       <div class="logo-block">
         <img class="logo-badge" :src="saoLogo" alt="SAO Logo" @click="openGithub">
-        <span class="logo-text"><em>TextDraw Designer</em></span>
+        <span class="logo-text"><em>TextDraw</em> Designer</span>
+        <span class="samp-badge">640×480</span>
       </div>
+
+      <div class="sep" />
+
+      <!-- Screen Aspect Ratio Toggle (16:9 Widescreen vs 4:3 Standard) -->
+      <button
+        class="btn toggle-btn aspect-btn"
+        :class="{ active: widescreen }"
+        @click="toggleWidescreen"
+        title="Toggle between 16:9 Widescreen (Laptop/PC SA-MP) and 4:3 Standard Aspect Ratio"
+      >
+        <span class="ratio-badge">{{ widescreen ? '16:9' : '4:3' }}</span>
+        {{ widescreen ? 'Widescreen' : 'Standard' }}
+      </button>
+
+      <div class="sep" />
+
+      <!-- View & HUD Toggles -->
+      <button
+        class="btn toggle-btn"
+        :class="{ active: showGtaHud }"
+        @click="showGtaHud = !showGtaHud"
+        title="Toggle GTA SA HUD Overlay (Tinju, Uang, Radar Map)"
+      >
+        <span class="hud-dot" :class="{ on: showGtaHud }"></span> GTA HUD
+      </button>
+
+      <template v-if="showGtaHud">
+        <span class="bar-label">HUD</span>
+        <input type="range" min="10" max="100" v-model.number="hudOpacity" class="slider" style="width:46px" title="HUD Opacity" />
+        <span class="slider-num">{{ hudOpacity }}%</span>
+      </template>
+
+      <button
+        class="btn toggle-btn"
+        :class="{ active: showGrid }"
+        @click="showGrid = !showGrid"
+        title="Toggle Grid Overlay"
+      >
+        Grid
+      </button>
+
+      <button
+        class="btn toggle-btn"
+        :class="{ active: showSafe }"
+        @click="showSafe = !showSafe"
+        title="Toggle Safe Zone / Chat Boundaries"
+      >
+        Safe Zone
+      </button>
+
+      <div class="sep" />
+
+      <span class="bar-label">BG</span>
+      <input type="range" min="0" max="100" v-model.number="bgOpacity" class="slider" style="width:46px" title="Background Opacity" />
+
+      <div class="sep" />
+
+      <!-- Laptop-friendly Zoom Controls -->
+      <span class="bar-label">Zoom</span>
+      <button class="btn sm zoom-btn" @click="zoomStep(-0.1)" title="Zoom Out">-</button>
+      <input type="range" min="50" max="300" step="5"
+        :value="Math.round(zoom * 100)"
+        @input="zoom = Math.round(+$event.target.value) / 100"
+        class="slider" style="width:65px" />
+      <button class="btn sm zoom-btn" @click="zoomStep(0.1)" title="Zoom In">+</button>
+      <span class="zoom-val">{{ Math.round(zoom * 100) }}%</span>
+
+      <button class="btn sm" @click="autoFitZoom" title="Fit Canvas to Laptop Screen">Fit Screen</button>
+      <button class="btn sm" @click="resetZoom" title="Exact 1:1 SA-MP Native Resolution (640x480)">100% (1:1)</button>
 
       <div style="flex:1" />
 
-      <span class="bar-label">BG</span>
-      <input type="range" min="0" max="100" v-model.number="bgOpacity" class="slider" style="width:60px" />
-
-      <div class="sep" />
-
-      <span class="bar-label">Zoom</span>
-      <input type="range" min="50" max="500" step="10"
-        :value="Math.round((zoom-1)*100)"
-        @input="zoom = +$event.target.value/100+1"
-        class="slider" style="width:80px" />
-      <span class="zoom-val">{{ Math.round((zoom-1)*100) }}%</span>
-
-      <div class="sep" />
-
-      <button class="btn" @click="store.undo()">Undo</button>
-      <button class="btn" @click="store.redo()">Redo</button>
+      <button class="btn" @click="store.undo()" title="Undo">Undo</button>
+      <button class="btn" @click="store.redo()" title="Redo">Redo</button>
       <div class="sep" />
       <button class="btn" @click="onOpenProjects">Projects</button>
       <button class="btn" @click="onOpenJson">Import</button>
@@ -71,6 +127,9 @@
           :marquee="marquee.marquee.value"
           :zoom="zoom"
           :showGrid="showGrid"
+          :showSafe="showSafe"
+          :showGtaHud="showGtaHud"
+          :hudOpacity="hudOpacity"
           :gridSize="gridSize"
           :bgImage="bgImg.bgImage.value"
           :bgOpacity="bgOpacity"
@@ -84,17 +143,6 @@
           @contextmenu="onContextMenu"
           @sprite-drop="onSpriteDrop"
         />
-        <svg class="snap-lines" :viewBox="`0 0 ${CW} ${CH}`"
-          :style="{ width: CW * zoom + 'px', height: CH * zoom + 'px' }">
-        <template v-for="line in snapLines" :key="line.axis + line.value">
-          <line v-if="line.axis === 'x'"
-            :x1="line.value" y1="0" :x2="line.value" :y2="CH"
-            stroke="#C80041" stroke-width="0.5" stroke-dasharray="3 2" />
-          <line v-else
-            x1="0" :y1="line.value" :x2="CW" :y2="line.value"
-            stroke="#C80041" stroke-width="0.5" stroke-dasharray="3 2" />
-        </template>
-      </svg>
       </div>
 
       <RightPanel
@@ -134,6 +182,7 @@
       :pos="ctxPos"
       :isCanvas="ctxIsCanvas"
       :showGrid="showGrid"
+      :showGtaHud="showGtaHud"
       :snapMode="snapMode"
       :gridSize="gridSize"
       :prefix="prefix"
@@ -144,6 +193,7 @@
       @action="onCtxAction"
       @close="ctxPos = null"
       @grid="showGrid = $event"
+      @hud="showGtaHud = $event"
       @snapMode="snapMode = $event"
       @gridSize="gridSize = $event"
       @update:prefix="prefix = $event"
@@ -184,7 +234,15 @@ import ProjectsModal from './components/modals/ProjectsModal.vue'
 import ContextMenu from './components/modals/ContextMenu.vue'
 import NotificationStack from './components/modals/NotificationStack.vue'
 
-const widescreen = ref(false);
+const widescreen = ref(localStorage.getItem('sao_td_widescreen') === 'true');
+
+function toggleWidescreen() {
+  widescreen.value = !widescreen.value
+  try {
+    localStorage.setItem('sao_td_widescreen', widescreen.value.toString())
+  } catch (e) {}
+  setTimeout(autoFitZoom, 40)
+}
 
 const store      = useElementStore()
 const snapUtil   = useSnap()
@@ -202,11 +260,35 @@ const gridSize  = snapUtil.gridSize
 const snapLines = snapUtil.snapLines
 
 const prefix     = ref('td')
-const zoom       = ref(2)
+const zoom       = ref(1.2)
 const showGrid   = ref(true)
+const showGtaHud = ref(true)
+const hudOpacity = ref(90)
+const showSafe   = ref(false)
 const bgOpacity  = ref(100)
 const mp         = ref({ x: 0, y: 0 })
 const ctxPos     = ref(null)
+
+function autoFitZoom() {
+  if (!canvasWrap.value) return
+  const pad = 48
+  const wrapW = canvasWrap.value.clientWidth - pad
+  const wrapH = canvasWrap.value.clientHeight - pad
+  if (wrapW <= 0 || wrapH <= 0) return
+  const fitW = wrapW / CW
+  const fitH = wrapH / CH
+  const bestZoom = Math.min(fitW, fitH)
+  zoom.value = Math.max(0.6, Math.min(2.5, Math.round(bestZoom * 20) / 20))
+}
+
+function zoomStep(delta) {
+  const next = Math.round((zoom.value + delta) * 10) / 10
+  zoom.value = Math.max(0.5, Math.min(3.0, next))
+}
+
+function resetZoom() {
+  zoom.value = 1.0
+}
 const showExport = ref(false)
 const showJson   = ref(false)
 const exportCode = ref('')
@@ -597,6 +679,8 @@ function onUploadRefs(e) {
 
 onMounted(async () => {
   console.log('[app] onMounted fired, URL:', window.location.search)
+  setTimeout(autoFitZoom, 60)
+  window.addEventListener('resize', autoFitZoom)
   await projectsApi.refresh()
   const redirected = await githubAuth.handleCallback()
   if (redirected) {
@@ -604,6 +688,10 @@ onMounted(async () => {
     if (count) onNotify(`Pulled ${count} project(s) from cloud`, 'success')
     await projectsApi.refresh()
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', autoFitZoom)
 })
 
 async function onPullFromCloud() {
@@ -640,7 +728,7 @@ useKeyboard({
   },
   selRef: refImages.selRef,
   zoomBy: (delta) => {
-    zoom.value = Math.min(6, Math.max(1, zoom.value + delta / 100))
+    zoom.value = Math.min(3.0, Math.max(0.5, Math.round((zoom.value + delta / 100) * 100) / 100))
   }
 })
 
@@ -690,33 +778,87 @@ body { overflow: hidden; }
   height: 42px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px;
+  gap: 5px;
+  padding: 0 10px;
   background: var(--bg1);
   border-bottom: 1px solid var(--border2);
   flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .logo-block {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-right: 4px;
+  gap: 6px;
+  margin-right: 2px;
+  flex-shrink: 0;
 }
 .logo-badge {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
 }
 .logo-text {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text0);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 .logo-text em {
   font-style: normal;
   color: var(--accent);
+}
+
+.samp-badge {
+  font-size: 9px;
+  font-weight: 700;
+  color: #a0a0a0;
+  background: var(--bg3);
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border2);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.toggle-btn.active {
+  background: rgba(200, 0, 65, 0.16);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.hud-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #555555;
+  transition: background 0.15s;
+}
+.hud-dot.on {
+  background: #3aaa6a;
+  box-shadow: 0 0 5px rgba(58, 170, 106, 0.8);
+}
+
+.slider-num {
+  font-size: 9px;
+  color: var(--text1);
+  min-width: 24px;
+  text-align: right;
+  font-family: monospace;
+}
+
+.zoom-btn {
+  padding: 2px 6px;
+  min-width: 18px;
+  text-align: center;
+  font-weight: 700;
 }
 
 .sep {

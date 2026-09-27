@@ -19,8 +19,6 @@ const KNOWN_SPRITE_LIBS = [
   'hud', 'radar', 'sampcac', 'samp', 'timecyc',
 ]
 
-const SX = 640 / 592
-const INV_SX = 592 / 640
 
 function parseColor(raw) {
   const n = parseInt(raw)
@@ -88,8 +86,8 @@ export function importPawn(code) {
       const coordsAndText = args.slice(args.length - 3)
 
       const rawX = parseFloat(coordsAndText[0])
-      const x = rawX * INV_SX
-      const y = parseFloat(coordsAndText[1]) + 3
+      const x = rawX
+      const y = parseFloat(coordsAndText[1])
       const rawText = coordsAndText[2].replace(/^"|"$/g, '')
 
       current = {
@@ -187,31 +185,31 @@ export function importPawn(code) {
 
     if (el.type === 'sprite') {
       el.text = el.text.toLowerCase()
-      el.w = tx * INV_SX
+      el.w = tx
       el.h = ty
       el.textSizeX = 0
       el.textSizeY = 0
     } else if (el.useBox && tx > 0) {
       el.h = Math.round(el.letterY / 0.1154)
-      el.w = (tx - rawX + 5) * INV_SX
+      el.w = tx - rawX + 5
     } else if (el.useBox && el.align === 1 && ty > 0) {
       el.h = Math.round(el.letterY / 0.1154)
-      el.w = (ty / 1.08125) * INV_SX
-      el.x = rawX * INV_SX
+      el.w = ty / 1.08125
+      el.x = rawX
       el.textSizeX = 0
       el.textSizeY = ty
     } else if (el.useBox && tx > 0) {
       el.h = Math.round(el.letterY / 0.1154)
-      el.w = ty * INV_SX
+      el.w = ty
       el.textSizeX = 0
       el.textSizeY = 0
     } else {
       el.h = Math.round(el.letterY * 10)
       if (tx > 0) {
-        el.w = (tx - rawX) * INV_SX
+        el.w = tx - rawX
       } else {
         // estimate from letter size × text length
-        el.w = Math.round(el.letterX * 21 * (el.text?.length || 5) * INV_SX)
+        el.w = Math.round(el.letterX * 21 * (el.text?.length || 5))
       }
       el.textSizeX = 0
       el.textSizeY = 0

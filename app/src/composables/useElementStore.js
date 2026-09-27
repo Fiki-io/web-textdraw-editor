@@ -2,8 +2,23 @@ import { ref, computed } from 'vue'
 import { makeElement } from '../utils/makeElement'
 import { useHistory } from './useHistory'
 
+const STORAGE_KEY = 'sao_td_canvas_elements'
+
+function loadSavedEls() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch (e) {
+    console.error('Failed to load saved elements', e)
+  }
+  return []
+}
+
 export function useElementStore() {
-  const els = ref([])
+  const els = ref(loadSavedEls())
   const selected = ref(new Set())
   const { push, undo: histUndo, redo: histRedo, canUndo, canRedo } = useHistory()
 
@@ -14,6 +29,11 @@ export function useElementStore() {
   function commit(next) {
     els.value = next
     push(next)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    } catch (e) {
+      console.error('Failed to persist elements to localStorage', e)
+    }
   }
 
   function addEl(type, prefix, extra = {}) {

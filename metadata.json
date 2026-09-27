@@ -1,0 +1,8 @@
+{
+  "name": "Web Textdraw Editor",
+  "description": "In-browser GTA SA-MP Textdraw editor with visual canvas, layers, font reference, and PAWN code export.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

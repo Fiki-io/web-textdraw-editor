@@ -14,15 +14,13 @@ function calcTextSize(el) {
 }
 
 function scaleEl(el) {
-  const sx = 640 / 592
-  const x = el.x * sx
   return {
     ...el,
-    x,
-    y: el.y - 3,
-    w: el.w * sx,
+    x: el.x,
+    y: el.y,
+    w: el.w,
     h: el.h,
-    textSizeX: el.textSizeX * sx,
+    textSizeX: el.textSizeX,
     textSizeY: el.textSizeY,
   }
 }

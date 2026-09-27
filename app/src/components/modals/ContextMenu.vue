@@ -12,6 +12,10 @@
         Grid
       </label>
       <label class="ctx-item cb-row" @mousedown.stop>
+        <input type="checkbox" :checked="showGtaHud" @change="emit('hud', $event.target.checked)" />
+        GTA SA HUD (Tinju, Uang, Map)
+      </label>
+      <label class="ctx-item cb-row" @mousedown.stop>
         <input type="checkbox" :checked="widescreen" @change="emit('widescreen', $event.target.checked)" />
         Widescreen
       </label>
@@ -84,13 +88,14 @@ const props = defineProps({
   pos: Object,
   isCanvas: Boolean,
   showGrid: Boolean,
+  showGtaHud: { type: Boolean, default: true },
   snapMode: String,
   gridSize: Number,
   prefix: String,
   widescreen: Boolean,
 })
 
-const emit = defineEmits(['action', 'close', 'grid', 'snapMode', 'gridSize', 'update:prefix', 'widescreen'])
+const emit = defineEmits(['action', 'close', 'grid', 'hud', 'snapMode', 'gridSize', 'update:prefix', 'widescreen'])
 
 const localGrid = ref(props.showGrid)
 

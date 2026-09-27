@@ -90,7 +90,7 @@
       <XpPanel title="Transform">
         <div class="num-grid">
           <div class="num-cell"><span class="num-label">X</span><NumberInput :value="el.x" :min="0" :max="640" @update:modelValue="u('x', $event)" /></div>
-          <div class="num-cell"><span class="num-label">Y</span><NumberInput :value="el.y" :min="0" :max="448" @update:modelValue="u('y', $event)" /></div>
+          <div class="num-cell"><span class="num-label">Y</span><NumberInput :value="el.y" :min="0" :max="480" @update:modelValue="u('y', $event)" /></div>
           <div class="num-cell"><span class="num-label">W</span><NumberInput :value="el.w" :min="1" @update:modelValue="u('w', Math.max(1,$event))" /></div>
           <div class="num-cell"><span class="num-label">H</span><NumberInput :value="el.h" :min="1" @update:modelValue="u('h', Math.max(1,$event))" /></div>
         </div>
