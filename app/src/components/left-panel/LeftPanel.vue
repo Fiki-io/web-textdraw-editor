@@ -33,6 +33,10 @@
       @insert-sprite="emit('insert-sprite', $event)"
       @sprites-loaded="emit('notify', `Loaded ${$event} sprite(s)`)"
     />
+    <ModelsTab
+      v-else-if="activeTab === 'models'"
+      @insert-model="emit('insert-model', $event)"
+    />
     <RefsTab
       v-else-if="activeTab === 'refs'"
       :bgImage="bgImage"
@@ -67,6 +71,7 @@ import { ref } from 'vue'
 import AddTab from './AddTab.vue'
 import LayersTab from './LayersTab.vue'
 import SpritesTab from './SpritesTab.vue'
+import ModelsTab from './ModelsTab.vue'
 import RefsTab from './RefsTab.vue'
 import { useTxdStore } from '../../composables/useTxdStore'
 
@@ -82,7 +87,7 @@ defineProps({
 const emit = defineEmits([
   'add-element', 'add-preset',
   'select', 'multi-select', 'toggle-visible', 'toggle-lock', 'delete-element', 'contextmenu',
-  'insert-sprite', 'notify',
+  'insert-sprite', 'insert-model', 'notify',
   'upload-bg', 'remove-bg', 'upload-refs',
   'select-ref', 'toggle-ref-visible', 'toggle-ref-lock', 'delete-ref',
   'reorder',
@@ -95,6 +100,7 @@ const tabs = [
   { key: 'add',     label: 'Add'     },
   { key: 'layers',  label: 'Layers'  },
   { key: 'sprites', label: 'Sprites' },
+  { key: 'models',  label: 'Models'  },
   { key: 'refs',    label: 'Refs'    },
 ]
 </script>

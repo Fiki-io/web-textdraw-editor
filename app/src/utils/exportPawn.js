@@ -1,4 +1,4 @@
-import { numToHex8 } from './colors'
+import { numToHex8 } from './colors.js'
 
 function calcTextSize(el) {
   if (el.type === 'sprite') {
@@ -56,10 +56,30 @@ export function exportPawn(els, prefix) {
     lines.push(`    // ${el.name} (${el.type})`)
 
     if (el.type === 'sprite') {
-      lines.push(`    ${ref} = TextDrawCreate(${el.x.toFixed(1)}, ${el.y.toFixed(1)}, "${txt}");`)
+      const expX = el.scaleX === -1 || el._flippedX ? el.x + el.w : el.x
+      const expY = el.scaleY === -1 || el._flippedY ? el.y + el.h : el.y
+      const expW = el.scaleX === -1 || el._flippedX ? -el.w : el.w
+      const expH = el.scaleY === -1 || el._flippedY ? -el.h : el.h
+      lines.push(`    ${ref} = TextDrawCreate(${expX.toFixed(1)}, ${expY.toFixed(1)}, "${txt}");`)
       lines.push(`    TextDrawFont(${ref}, 4);`)
-      lines.push(`    TextDrawTextSize(${ref}, ${el.w.toFixed(1)}, ${el.h.toFixed(1)});`)
+      lines.push(`    TextDrawTextSize(${ref}, ${expW.toFixed(1)}, ${expH.toFixed(1)});`)
       lines.push(`    TextDrawColor(${ref}, ${col});`)
+    } else if (el.type === 'model' || el.font === 5) {
+      const expX = el.scaleX === -1 || el._flippedX ? el.x + el.w : el.x
+      const expY = el.scaleY === -1 || el._flippedY ? el.y + el.h : el.y
+      const expW = el.scaleX === -1 || el._flippedX ? -el.w : el.w
+      const expH = el.scaleY === -1 || el._flippedY ? -el.h : el.h
+      lines.push(`    ${ref} = TextDrawCreate(${expX.toFixed(1)}, ${expY.toFixed(1)}, "Preview_Model");`)
+      lines.push(`    TextDrawFont(${ref}, 5);`)
+      lines.push(`    TextDrawTextSize(${ref}, ${expW.toFixed(1)}, ${expH.toFixed(1)});`)
+      lines.push(`    TextDrawColor(${ref}, ${col});`)
+      lines.push(`    TextDrawBackgroundColor(${ref}, ${bg});`)
+      lines.push(`    TextDrawSetPreviewModel(${ref}, ${el.modelId ?? 2880});`)
+      lines.push(`    TextDrawSetPreviewRot(${ref}, ${(el.rotX || 0).toFixed(1)}, ${(el.rotY || 0).toFixed(1)}, ${(el.rotZ || 0).toFixed(1)}, ${(el.zoom || 1.0).toFixed(2)});`)
+      if (el.vehCol1 !== undefined && el.vehCol1 !== -1) {
+        lines.push(`    TextDrawSetPreviewVehCol(${ref}, ${el.vehCol1}, ${el.vehCol2 !== undefined ? el.vehCol2 : -1});`)
+      }
+      if (el.selectable) lines.push(`    TextDrawSetSelectable(${ref}, 1);`)
     } else {
       lines.push(`    ${ref} = TextDrawCreate(${el.x.toFixed(1)}, ${el.y.toFixed(1)}, "${txt}");`)
       lines.push(`    TextDrawFont(${ref}, ${el.font});`)
@@ -95,10 +115,30 @@ export function exportPawn(els, prefix) {
     lines.push(`    // ${el.name} (${el.type})`)
 
     if (el.type === 'sprite') {
-      lines.push(`    ${ref} = CreatePlayerTextDraw(playerid, ${el.x.toFixed(1)}, ${el.y.toFixed(1)}, "${txt}");`)
+      const expX = el.scaleX === -1 || el._flippedX ? el.x + el.w : el.x
+      const expY = el.scaleY === -1 || el._flippedY ? el.y + el.h : el.y
+      const expW = el.scaleX === -1 || el._flippedX ? -el.w : el.w
+      const expH = el.scaleY === -1 || el._flippedY ? -el.h : el.h
+      lines.push(`    ${ref} = CreatePlayerTextDraw(playerid, ${expX.toFixed(1)}, ${expY.toFixed(1)}, "${txt}");`)
       lines.push(`    PlayerTextDrawFont(playerid, ${ref}, 4);`)
-      lines.push(`    PlayerTextDrawTextSize(playerid, ${ref}, ${el.w.toFixed(1)}, ${el.h.toFixed(1)});`)
+      lines.push(`    PlayerTextDrawTextSize(playerid, ${ref}, ${expW.toFixed(1)}, ${expH.toFixed(1)});`)
       lines.push(`    PlayerTextDrawColor(playerid, ${ref}, ${col});`)
+    } else if (el.type === 'model' || el.font === 5) {
+      const expX = el.scaleX === -1 || el._flippedX ? el.x + el.w : el.x
+      const expY = el.scaleY === -1 || el._flippedY ? el.y + el.h : el.y
+      const expW = el.scaleX === -1 || el._flippedX ? -el.w : el.w
+      const expH = el.scaleY === -1 || el._flippedY ? -el.h : el.h
+      lines.push(`    ${ref} = CreatePlayerTextDraw(playerid, ${expX.toFixed(1)}, ${expY.toFixed(1)}, "Preview_Model");`)
+      lines.push(`    PlayerTextDrawFont(playerid, ${ref}, 5);`)
+      lines.push(`    PlayerTextDrawTextSize(playerid, ${ref}, ${expW.toFixed(1)}, ${expH.toFixed(1)});`)
+      lines.push(`    PlayerTextDrawColor(playerid, ${ref}, ${col});`)
+      lines.push(`    PlayerTextDrawBackgroundColor(playerid, ${ref}, ${bg});`)
+      lines.push(`    PlayerTextDrawSetPreviewModel(playerid, ${ref}, ${el.modelId ?? 2880});`)
+      lines.push(`    PlayerTextDrawSetPreviewRot(playerid, ${ref}, ${(el.rotX || 0).toFixed(1)}, ${(el.rotY || 0).toFixed(1)}, ${(el.rotZ || 0).toFixed(1)}, ${(el.zoom || 1.0).toFixed(2)});`)
+      if (el.vehCol1 !== undefined && el.vehCol1 !== -1) {
+        lines.push(`    PlayerTextDrawSetPreviewVehCol(playerid, ${ref}, ${el.vehCol1}, ${el.vehCol2 !== undefined ? el.vehCol2 : -1});`)
+      }
+      if (el.selectable) lines.push(`    PlayerTextDrawSetSelectable(playerid, ${ref}, 1);`)
     } else {
       lines.push(`    ${ref} = CreatePlayerTextDraw(playerid, ${el.x.toFixed(1)}, ${el.y.toFixed(1)}, "${txt}");`)
       lines.push(`    PlayerTextDrawFont(playerid, ${ref}, ${el.font});`)

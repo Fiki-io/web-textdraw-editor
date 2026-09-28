@@ -137,6 +137,62 @@
         <PropRow label="lib:tex"><input class="xp-input" :value="el.text" @input="u('text', $event.target.value)" /></PropRow>
       </XpPanel>
 
+      <!-- 3D Model Preview Panel -->
+      <XpPanel v-if="el.type === 'model' || el.font === 5" title="Model Preview">
+        <PropRow label="Model ID">
+          <NumberInput :value="el.modelId ?? 2880" :min="0" :max="30000" @update:modelValue="u('modelId', $event)" />
+        </PropRow>
+
+        <div class="model-preview-card">
+          <div class="model-preview-thumb">
+            <img
+              :src="getModelImageUrl(el.modelId ?? 2880)"
+              class="model-thumb-img"
+              alt="Model preview"
+              @error="$event.target.style.display='none'"
+            />
+          </div>
+          <div class="model-meta">
+            <span class="model-meta-name">{{ getModelInfo(el.modelId ?? 2880).name }}</span>
+            <span class="model-meta-cat">{{ getModelInfo(el.modelId ?? 2880).category }}</span>
+          </div>
+        </div>
+
+        <div class="quick-preset-title">Quick Presets:</div>
+        <div class="quick-model-grid">
+          <button
+            v-for="p in QUICK_PRESETS"
+            :key="p.id"
+            class="preset-badge"
+            :class="{ active: el.modelId === p.id }"
+            @click="u('modelId', p.id); u('name', `td_${p.name.toLowerCase()}`)"
+          >
+            {{ p.name }}
+          </button>
+        </div>
+
+        <div class="num-grid" style="margin-top: 6px;">
+          <div class="num-cell">
+            <span class="num-label">Rot Z</span>
+            <NumberInput :value="el.rotZ ?? 0" :step="5" @update:modelValue="u('rotZ', $event)" />
+          </div>
+          <div class="num-cell">
+            <span class="num-label">Zoom</span>
+            <NumberInput :value="el.zoom ?? 1.0" :step="0.05" :min="0.1" :max="5.0" @update:modelValue="u('zoom', $event)" />
+          </div>
+        </div>
+        <div class="num-grid" style="margin-top: 4px;">
+          <div class="num-cell">
+            <span class="num-label">Rot X</span>
+            <NumberInput :value="el.rotX ?? 0" :step="5" @update:modelValue="u('rotX', $event)" />
+          </div>
+          <div class="num-cell">
+            <span class="num-label">Rot Y</span>
+            <NumberInput :value="el.rotY ?? 0" :step="5" @update:modelValue="u('rotY', $event)" />
+          </div>
+        </div>
+      </XpPanel>
+
       <XpPanel v-if="el.type === 'progress'" title="Progress">
         <PropRow label="Value %">
           <NumberInput :value="parseFloat(el.text) || 0" :min="0" :max="100" @update:modelValue="u('text', String(Math.min(100, Math.max(0, $event))))" />
@@ -165,7 +221,22 @@ import NumberInput from '../shared/NumberInput.vue'
 import ColorSwatch from '../shared/ColorSwatch.vue'
 import XpPanel     from '../shared/XpPanel.vue'
 import { FONT_NAMES } from '../../constants/fonts'
+import { getModelImageUrl, getModelInfo } from '../../constants/models'
 import { computed, ref, watch, reactive, onMounted, onUnmounted } from 'vue'
+
+const QUICK_PRESETS = [
+  { id: 2880, name: 'Burger' },
+  { id: 2647, name: 'Drink' },
+  { id: 2528, name: 'Toilet' },
+  { id: 19577, name: 'Pizza' },
+  { id: 1240, name: 'Heart' },
+  { id: 1242, name: 'Armour' },
+  { id: 1212, name: 'Money' },
+  { id: 348, name: 'Deagle' },
+  { id: 356, name: 'M4' },
+  { id: 0, name: 'CJ' },
+  { id: 411, name: 'Infernus' },
+]
 
 
 const fontOpen = ref(false)
@@ -219,7 +290,7 @@ function onClickOutside(e)
 onMounted(() => window.addEventListener('mousedown', onClickOutside))
 onUnmounted(() => window.removeEventListener('mousedown', onClickOutside))
 
-const isText = computed(() => ['label', 'button', 'box', 'sprite'].includes(props.el.type))
+const isText = computed(() => ['label', 'button', 'box'].includes(props.el.type) && props.el.font !== 5)
 
 const textFlags = computed(() => {
   const flags = [
@@ -384,5 +455,88 @@ const textFlags = computed(() => {
 .font-option { padding:4px 8px; font-size:13px; cursor:pointer; color:var(--text0); }
 .font-option:hover { background:var(--accent-dim); color:var(--text0); }
 .font-option.active { color:var(--accent); }
+
+/* ── Model Preview Styles ── */
+.model-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg0);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 6px;
+  margin: 4px 0 6px 0;
+}
+.model-preview-thumb {
+  width: 44px;
+  height: 44px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.model-thumb-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.model-meta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.model-meta-name {
+  font-family: Tahoma, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.model-meta-cat {
+  font-family: Tahoma, sans-serif;
+  font-size: 9px;
+  color: var(--accent);
+}
+.quick-preset-title {
+  font-family: Tahoma, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text2);
+  margin-top: 4px;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+.quick-model-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.preset-badge {
+  font-family: Tahoma, sans-serif;
+  font-size: 9px;
+  padding: 2px 5px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  color: var(--text1);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.preset-badge:hover {
+  background: var(--bg3);
+  color: var(--text0);
+  border-color: var(--accent);
+}
+.preset-badge.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
 
 </style>

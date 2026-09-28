@@ -58,7 +58,7 @@
 <script setup>
 const emit = defineEmits(['add-element', 'add-preset'])
 
-const elementTypes = ['label', 'box', 'sprite']
+const elementTypes = ['label', 'box', 'sprite', 'model']
 
 </script>
 
@@ -92,7 +92,7 @@ const elementTypes = ['label', 'box', 'sprite']
 
 .element-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 4px;
   margin-bottom: 4px;
 }

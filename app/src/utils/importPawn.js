@@ -45,9 +45,26 @@ function parseBool(raw) {
 }
 
 function extractArgs(line) {
-  const m = line.match(/\(([^)]*)\)/)
+  const m = line.match(/\(([\s\S]*)\)/)
   if (!m) return []
-  return m[1].split(',').map(s => s.trim())
+  const str = m[1]
+  const args = []
+  let current = ''
+  let inQuote = false
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i]
+    if (ch === '"' && str[i - 1] !== '\\') {
+      inQuote = !inQuote
+      current += ch
+    } else if (ch === ',' && !inQuote) {
+      args.push(current.trim())
+      current = ''
+    } else {
+      current += ch
+    }
+  }
+  if (current.trim()) args.push(current.trim())
+  return args
 }
 
 function extractLastArgs(line, count) {
@@ -63,6 +80,7 @@ function isSpriteName(text) {
 }
 
 function detectType(el) {
+  if (el.font === 5 || el.modelId !== undefined || /^preview_model$/i.test(el.text?.trim() || '')) return 'model'
   if (el.font === 4 || isSpriteName(el.text)) return 'sprite'
   if (el.useBox && el.text === '_') return 'box'
   return 'label'
@@ -166,6 +184,25 @@ export function importPawn(code) {
     } else if (/(?:TextDraw|PlayerTextDraw)BackgroundColou?r/i.test(line)) {
       const [raw] = extractLastArgs(line, 1)
       current.bgColor = parseColor(raw)
+    } else if (/(?:TextDraw|PlayerTextDraw)SetPreviewModel/i.test(line)) {
+      const [raw] = extractLastArgs(line, 1)
+      current.modelId = parseInt(raw) || 0
+      current.font = 5
+      current.type = 'model'
+    } else if (/(?:TextDraw|PlayerTextDraw)SetPreviewRot/i.test(line)) {
+      const args = extractLastArgs(line, 4)
+      if (args.length >= 4) {
+        current.rotX = parseFloat(args[0]) || 0
+        current.rotY = parseFloat(args[1]) || 0
+        current.rotZ = parseFloat(args[2]) || 0
+        current.zoom = parseFloat(args[3]) || 1.0
+      }
+    } else if (/(?:TextDraw|PlayerTextDraw)SetPreviewVehCol/i.test(line)) {
+      const args = extractLastArgs(line, 2)
+      if (args.length >= 2) {
+        current.vehCol1 = parseInt(args[0])
+        current.vehCol2 = parseInt(args[1])
+      }
     }
   }
 
@@ -184,15 +221,32 @@ export function importPawn(code) {
     delete el._rawX
     delete el._flipped
 
-    if (el.type === 'sprite') {
-      el.text = el.text.toLowerCase()
-      el.w = tx
-      el.h = ty
-      el.textSizeX = 0
-      el.textSizeY = 0
+    if (el.type === 'sprite' || el.type === 'model' || el.font === 5) {
+      if (el.type === 'sprite') el.text = el.text.toLowerCase()
+      if (el.type === 'model') {
+        el.font = 5
+        if (el.modelId === undefined) el.modelId = 2880
+      }
+      const rawTx = tx !== undefined && tx !== 0 ? tx : 32
+      const rawTy = ty !== undefined && ty !== 0 ? ty : 32
+      el.w = Math.abs(rawTx)
+      el.h = Math.abs(rawTy)
+      if (rawTy < 0) {
+        el.y = el.y + rawTy
+        el.scaleY = -1
+        el._flippedY = true
+      }
+      if (rawTx < 0) {
+        el.x = el.x + rawTx
+        el.scaleX = -1
+        el._flippedX = true
+      }
+      el.textSizeX = el.w
+      el.textSizeY = el.h
     } else if (el.useBox && tx > 0) {
       el.h = Math.round(el.letterY / 0.1154)
-      el.w = tx - rawX + 5
+      const diff = tx - rawX + 5
+      el.w = diff > 0 ? diff : tx
     } else if (el.useBox && el.align === 1 && ty > 0) {
       el.h = Math.round(el.letterY / 0.1154)
       el.w = ty / 1.08125
@@ -207,7 +261,8 @@ export function importPawn(code) {
     } else {
       el.h = Math.round(el.letterY * 10)
       if (tx > 0) {
-        el.w = tx - rawX
+        const diff = tx - rawX
+        el.w = diff > 0 ? diff : tx
       } else {
         // estimate from letter size × text length
         el.w = Math.round(el.letterX * 21 * (el.text?.length || 5))
@@ -216,7 +271,7 @@ export function importPawn(code) {
       el.textSizeY = 0
     }
 
-    if (flipped) el.w = -Math.abs(el.w)
+    if (flipped && el.type === 'label') el.w = -Math.abs(el.w)
   }
 
   return elements

@@ -109,6 +109,7 @@
         @delete-element="el => store.deleteEl(el.id)"
         @contextmenu="onContextMenu"
         @insert-sprite="onInsertSprite"
+        @insert-model="onInsertModel"
         @notify="onNotify"
         @upload-bg="onUploadBg"
         @remove-bg="bgImg.remove"
@@ -439,6 +440,21 @@ function onInsertSprite(s) {
   onNotify(`Added ${s.lib}:${s.tex}`)
 }
 
+function onInsertModel(m) {
+  store.addEl('model', prefix.value, {
+    modelId: m.id,
+    w: 32,
+    h: 32,
+    name: `${prefix.value}_${(m.name || 'model').toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+    rotX: m.rotX ?? 0,
+    rotY: m.rotY ?? 0,
+    rotZ: m.rotZ ?? 0,
+    zoom: m.zoom ?? 1.0,
+    bgColor: 0x00000080,
+  })
+  onNotify(`Added Model: ${m.name} [ID: ${m.id}]`)
+}
+
 function onLayerSelect(el) {
   refImages.clearSelection()
   store.toggleSelect(el.id, false)
@@ -473,9 +489,14 @@ function onUpdateEl(id, patches)
   const w = 'w' in patches ? patches.w : el.w
   const x = 'x' in patches ? patches.x : el.x
 
-  if ('h' in patches) merged.letterY = parseFloat((patches.h * 0.135).toFixed(3))
+  if ('h' in patches && el.type !== 'sprite' && el.type !== 'model') {
+    merged.letterY = parseFloat((patches.h * 0.135).toFixed(3))
+  }
 
-  if ('w' in patches || 'align' in patches) {
+  if (el.type === 'sprite' || el.type === 'model') {
+    merged.textSizeX = w
+    merged.textSizeY = 'h' in patches ? patches.h : el.h
+  } else if ('w' in patches || 'align' in patches) {
     if (align === 1) {
       merged.textSizeX = 0
       merged.textSizeY = w * 1.08125

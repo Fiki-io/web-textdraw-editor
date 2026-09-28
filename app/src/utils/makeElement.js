@@ -6,6 +6,7 @@ const overrides = {
   label:   { text: 'Label', color: 0xFFFFFFFF, w: 55,  h: 25, letterX: 0.60, letterY: 2.3, bgColor: 0x000000FF },
   box:     { text: '_', color: 0xFFFFFFFF, boxColor: 0x111820EE, useBox: true, w: 160, h: 80, letterX: 0.2, letterY: 0.9 },
   sprite:  { text: 'hud:fist', color: 0xFFFFFFFF, font: 4, w: 50,  h: 50 },
+  model:   { text: 'Preview_Model', color: 0xFFFFFFFF, font: 5, w: 32, h: 32, modelId: 2880, rotX: 0, rotY: 0, rotZ: 0, zoom: 1.0, vehCol1: -1, vehCol2: -1, bgColor: 0x00000080 },
 }
 
 export function makeElement(type, x = 255, y = 190)

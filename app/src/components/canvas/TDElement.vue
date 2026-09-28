@@ -13,6 +13,7 @@
           ref="spriteImgRef"
           :src="currentImgSrc || spritePath"
           class="sprite-img-hidden"
+          crossorigin="anonymous"
           draggable="false"
           @dragstart.prevent
           @load="drawTinted"
@@ -20,6 +21,33 @@
         />
         <canvas v-if="spritePath && !imgFailed" ref="canvasRef" class="sprite-canvas" />
         <div v-if="!spritePath || imgFailed" class="sprite-fallback">{{ el.text }}</div>
+      </div>
+
+      <!-- 3D Model Preview (Font 5) -->
+      <div v-else-if="el.type === 'model' || el.font === 5" class="fill model-wrap" :style="modelWrapStyle">
+        <div class="model-viewport">
+          <img
+            v-if="modelImgSrc && !modelFailed"
+            ref="modelImgRef"
+            :src="modelImgSrc"
+            class="model-img-hidden"
+            crossorigin="anonymous"
+            draggable="false"
+            @dragstart.prevent
+            @load="processModelCanvas"
+            @error="onModelError"
+            :alt="`Model ${el.modelId}`"
+          />
+          <canvas
+            v-if="modelImgSrc && !modelFailed"
+            ref="modelCanvasRef"
+            class="model-canvas"
+            :style="modelImgStyle"
+          />
+          <div v-else-if="modelFailed" class="model-fallback">
+            <span class="model-badge">#{{ el.modelId || 0 }}</span>
+          </div>
+        </div>
       </div>
 
       <!-- Box / Line -->
@@ -63,6 +91,7 @@
   import { rgbaToCSS, numToHex6, hexToRGBA } from '../../utils/colors'
   import { spriteImagePath, localSpriteImagePath, prinesideSpriteUrl } from '../../constants/sprites'
   import { FONTS } from '../../constants/fonts'
+  import { getModelImageUrl, getModelFallbackUrls } from '../../constants/models'
 
   const props = defineProps({
     el: { type: Object, required: true },
@@ -77,6 +106,133 @@
   const fallbackIndex = ref(0)
   const spriteImgRef = ref(null)
   const canvasRef = ref(null)
+
+  // 3D Model Preview state
+  const modelFailed = ref(false)
+  const modelFallbackIndex = ref(0)
+  const currentModelSrc = ref(null)
+
+  const modelCandidates = computed(() => {
+    if (props.el.type !== 'model' && props.el.font !== 5) return []
+    const id = props.el.modelId ?? 2880
+    return getModelFallbackUrls(id)
+  })
+
+  const modelImgSrc = computed(() => {
+    if (currentModelSrc.value) return currentModelSrc.value
+    if (props.el.type !== 'model' && props.el.font !== 5) return null
+    return getModelImageUrl(props.el.modelId ?? 2880)
+  })
+
+  function onModelError() {
+    const list = modelCandidates.value
+    modelFallbackIndex.value++
+    if (modelFallbackIndex.value < list.length) {
+      currentModelSrc.value = list[modelFallbackIndex.value]
+    } else {
+      modelFailed.value = true
+    }
+  }
+
+  const modelImgRef = ref(null)
+  const modelCanvasRef = ref(null)
+
+  function processModelCanvas() {
+    nextTick(() => {
+      const img = modelImgRef.value
+      const cv = modelCanvasRef.value
+      if (!img || !cv || !img.complete || img.naturalWidth === 0) return
+
+      try {
+        cv.width = img.naturalWidth
+        cv.height = img.naturalHeight
+        const ctx = cv.getContext('2d')
+        ctx.clearRect(0, 0, cv.width, cv.height)
+        ctx.drawImage(img, 0, 0)
+
+        // Remove solid white background from JPG renders (e.g. prineside renders)
+        const imgData = ctx.getImageData(0, 0, cv.width, cv.height)
+        const d = imgData.data
+        let hasProcessed = false
+
+        const col = props.el.color
+        const hasCustomColor = col !== undefined && col !== 0xFFFFFFFF && col !== -1
+        let tintR = 255, tintG = 255, tintB = 255, tintA = 255
+        if (hasCustomColor) {
+          const rgba = hexToRGBA(col)
+          tintR = rgba.r
+          tintG = rgba.g
+          tintB = rgba.b
+          tintA = rgba.a
+        }
+
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i+1], b = d[i+2]
+          // If pixel is near-white (solid white backdrop)
+          if (r > 240 && g > 240 && b > 240) {
+            d[i+3] = 0 // completely transparent
+            hasProcessed = true
+          } else {
+            if (r > 220 && g > 220 && b > 220) {
+              // soft antialiased edge
+              const brightness = Math.max(r, g, b)
+              const alphaFactor = (255 - brightness) / 35
+              d[i+3] = Math.min(d[i+3], Math.round(d[i+3] * alphaFactor))
+              hasProcessed = true
+            }
+            if (hasCustomColor) {
+              // Tint non-transparent pixels with model color (e.g. SA-MP PlayerTextDrawColor)
+              d[i] = Math.round((d[i] * tintR) / 255)
+              d[i+1] = Math.round((d[i+1] * tintG) / 255)
+              d[i+2] = Math.round((d[i+2] * tintB) / 255)
+              d[i+3] = Math.round((d[i+3] * tintA) / 255)
+              hasProcessed = true
+            }
+          }
+        }
+        if (hasProcessed) {
+          ctx.putImageData(imgData, 0, 0)
+        }
+      } catch (err) {
+        console.warn('processModelCanvas error:', err)
+      }
+    })
+  }
+
+  watch(() => props.el.modelId, (newId) => {
+    modelFailed.value = false
+    modelFallbackIndex.value = 0
+    currentModelSrc.value = newId !== undefined ? getModelImageUrl(newId) : null
+    nextTick(() => processModelCanvas())
+  }, { immediate: true })
+
+  const modelWrapStyle = computed(() => {
+    const bg = props.el.bgColor ? rgbaToCSS(props.el.bgColor) : 'transparent'
+    return {
+      backgroundColor: bg,
+      borderRadius: '2px',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }
+  })
+
+  const modelImgStyle = computed(() => {
+    const rotZ = props.el.rotZ || 0
+    const zoom = props.el.zoom || 1.0
+    const scaleX = (props.el.scaleX ?? 1) * zoom
+    const scaleY = (props.el.scaleY ?? 1) * zoom
+    return {
+      maxWidth: '100%',
+      maxHeight: '100%',
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      transform: `scale(${scaleX}, ${scaleY}) rotate(${rotZ}deg)`,
+      filter: 'drop-shadow(0px 1px 3px rgba(0,0,0,0.6))',
+    }
+  })
 
   const spritePath = computed(() => {
     if (props.el.type !== 'sprite') return null
@@ -93,7 +249,8 @@
     const local = localSpriteImagePath(lib, tex)
     const prineside = prinesideSpriteUrl(lib, tex)
     const openMp = `https://assets.open.mp/assets/images/sprites/${lib}/${tex}.png`
-    return [...new Set([primary, local, prineside, openMp].filter(Boolean))]
+    const openMpHud = `https://assets.open.mp/assets/images/sprites/hud/${tex}.png`
+    return [...new Set([primary, local, openMp, openMpHud, prineside].filter(Boolean))]
   }
 
   function onImgError() {
@@ -113,9 +270,16 @@
     nextTick(() => drawTinted())
   }, { immediate: true })
 
-  watch(() => props.el.color, () => drawTinted())
+  watch(() => props.el.color, () => {
+    drawTinted()
+    processModelCanvas()
+  })
   watch(() => props.el.w, () => drawTinted())
   watch(() => props.el.h, () => drawTinted())
+  watch(() => props.el.scaleX, () => processModelCanvas())
+  watch(() => props.el.scaleY, () => processModelCanvas())
+  watch(() => props.el.rotZ, () => processModelCanvas())
+  watch(() => props.el.zoom, () => processModelCanvas())
 
 
   function measureTextWidth(text, fontFamily, fontSize)
@@ -441,7 +605,7 @@
       height: absH + boxOffsetH + (isBox ? BOX_FONT_OFFSET_H * props.zoom : 0) + 'px',
       cursor: props.el.locked ? 'default' : 'move',
       zIndex: (props.el.layer || 0) + 10,
-      transform: `scale(${w < 0 ? -1 : 1}, ${h < 0 ? -1 : 1})`,
+      transform: isText2 ? `scale(${w < 0 ? -1 : 1}, ${h < 0 ? -1 : 1})` : 'none',
       transformOrigin: 'center center',
       letterSpacing: (numericOffsets.letterSpacing ?? FONT_LETTER_SPACING[props.el.font ?? 0]?.[align] ?? 0) * fs + 'px',
       wordSpacing: (numericOffsets.wordSpacing ?? FONT_WORD_SPACING[props.el.font ?? 0]?.[align] ?? 0) * fs + 'px',
@@ -645,5 +809,51 @@
   }
   .wrapped-line {
     display: block;
+  }
+  .model-wrap {
+    position: relative;
+    user-select: none;
+  }
+  .model-viewport {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .model-img {
+    pointer-events: none;
+    user-select: none;
+    transition: transform 0.15s ease-out;
+  }
+  .model-img-hidden {
+    display: none;
+  }
+  .model-canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+    display: block;
+    image-rendering: smooth;
+    transition: transform 0.15s ease-out;
+  }
+  .model-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 170, 0, 0.12);
+    border: 1px dashed rgba(255, 170, 0, 0.5);
+    box-sizing: border-box;
+  }
+  .model-badge {
+    font-family: 'Tahoma', sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    color: #ffaa00;
   }
   </style>
