@@ -756,8 +756,18 @@ useKeyboard({
 
 <style>
 /* ── Global reset & scrollbars ── */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { overflow: hidden; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+html, body {
+  overflow: hidden;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
 
 :root {
   --bg0: #0a0a0a;

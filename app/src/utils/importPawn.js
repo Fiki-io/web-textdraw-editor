@@ -243,32 +243,45 @@ export function importPawn(code) {
       }
       el.textSizeX = el.w
       el.textSizeY = el.h
-    } else if (el.useBox && tx > 0) {
-      el.h = Math.round(el.letterY / 0.1154)
-      const diff = tx - rawX + 5
-      el.w = diff > 0 ? diff : tx
-    } else if (el.useBox && el.align === 1 && ty > 0) {
-      el.h = Math.round(el.letterY / 0.1154)
-      el.w = ty / 1.08125
-      el.x = rawX
-      el.textSizeX = 0
-      el.textSizeY = ty
-    } else if (el.useBox && tx > 0) {
-      el.h = Math.round(el.letterY / 0.1154)
-      el.w = ty
-      el.textSizeX = 0
-      el.textSizeY = 0
     } else {
-      el.h = Math.round(el.letterY * 10)
-      if (tx > 0) {
-        const diff = tx - rawX
-        el.w = diff > 0 ? diff : tx
+      // Calculate height
+      if (el.useBox && el.letterY > 0) {
+        el.h = Math.round(el.letterY / 0.1154)
+      } else if (ty > el.y) {
+        el.h = Math.round(ty - el.y)
       } else {
-        // estimate from letter size × text length
-        el.w = Math.round(el.letterX * 21 * (el.text?.length || 5))
+        el.h = Math.max(10, Math.round(el.letterY * 10))
       }
-      el.textSizeX = 0
-      el.textSizeY = 0
+
+      // Calculate width and canvas x based on alignment
+      if (el.align === 1) { // Center
+        const w = ty > 0 ? ty : (tx > 0 ? tx : Math.round(el.letterX * 21 * (el.text?.length || 5)))
+        el.w = Math.max(10, Math.round(w))
+        el.x = Math.round(rawX - (el.w / 2))
+        el.textSizeX = tx
+        el.textSizeY = ty
+      } else if (el.align === 2) { // Right
+        if (tx > 0 && rawX > tx) {
+          el.w = Math.max(10, Math.round(rawX - tx))
+          el.x = Math.round(tx)
+        } else {
+          el.w = Math.max(10, Math.round(el.letterX * 21 * (el.text?.length || 5)))
+          el.x = Math.round(rawX - el.w)
+        }
+        el.textSizeX = tx
+        el.textSizeY = ty
+      } else { // Left
+        if (tx > rawX) {
+          el.w = Math.max(10, Math.round(tx - rawX + 5))
+        } else if (tx > 0) {
+          el.w = Math.max(10, Math.round(tx))
+        } else {
+          el.w = Math.max(10, Math.round(el.letterX * 21 * (el.text?.length || 5)))
+        }
+        el.x = Math.round(rawX)
+        el.textSizeX = tx
+        el.textSizeY = ty
+      }
     }
 
     if (flipped && el.type === 'label') el.w = -Math.abs(el.w)

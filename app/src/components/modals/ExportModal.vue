@@ -80,7 +80,8 @@ const highlighted = computed(() => {
 function copyCode() {
   const lines = displayCode.value.split('\n')
   const start = lines.findIndex(l => l.startsWith('new '))
-  navigator.clipboard.writeText(lines.slice(start).join('\n'))
+  const from = start >= 0 ? start : 0
+  navigator.clipboard.writeText(lines.slice(from).join('\n'))
 }
 
 </script>

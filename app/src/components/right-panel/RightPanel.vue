@@ -16,6 +16,11 @@
           @delete="emit('delete')"
         />
 
+        <FontReference
+          v-if="selOne && ['label', 'box', 'button'].includes(selOne.type) && selOne.font !== 5"
+          style="margin-top: 8px;"
+        />
+
         <TDProperties
           v-else-if="!selOne && !selRefObj && selArr.length > 1"
           :el="{ color: 0, boxColor: 0, font: 0, align: 0 }"

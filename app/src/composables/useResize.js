@@ -30,15 +30,27 @@ export function useResize(els, selected, snapV, snapResize, clearSnapLines)
 
     els.value = els.value.map(el => {
       if (!selected.value.has(el.id)) return el
-      const newH = el.h + dh
-      const newW = el.w + dw
-      return {
+      const newH = Math.max(1, el.h + dh)
+      const newW = Math.max(1, el.w + dw)
+      const updated = {
         ...el,
-        w: newW, h: newH,
-        letterY: parseFloat((Math.abs(newH) / 9.5).toFixed(3)),
-        textSizeX: el.align === 1 ? 0 : el.align === 2 ? el.x : el.x + newW,
-        textSizeY: el.align === 1 ? newW * 1.08125 : el.h + dh,
+        w: newW,
+        h: newH,
       }
+      if (el.type === 'box') {
+        updated.letterY = parseFloat((newH * 0.1154).toFixed(3))
+      }
+      if (el.align === 1) {
+        updated.textSizeX = 0
+        updated.textSizeY = newW
+      } else if (el.align === 2) {
+        updated.textSizeX = el.x
+        updated.textSizeY = el.y + newH
+      } else {
+        updated.textSizeX = el.x + newW
+        updated.textSizeY = el.y + newH
+      }
+      return updated
     })
   }
 
